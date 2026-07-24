@@ -1,0 +1,14 @@
+{
+  "name": "devvpush-nextjs-fixture",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port 8000"
+  },
+  "dependencies": {
+    "next": "16.2.11",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}

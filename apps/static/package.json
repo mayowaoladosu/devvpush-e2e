@@ -1,0 +1,11 @@
+{
+  "name": "devvpush-static-fixture",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "8.1.5"
+  }
+}
