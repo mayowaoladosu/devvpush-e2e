@@ -1,4 +1,4 @@
-const release = "release-v1";
+const release = "release-v2";
 
 export default function Page() {
   return (
