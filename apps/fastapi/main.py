@@ -1,6 +1,9 @@
+import os
 import sqlite3
 from pathlib import Path
 
+import boto3
+from botocore.config import Config
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -9,10 +12,32 @@ app = FastAPI(title="devvpush FastAPI E2E")
 RELEASE = "release-v1"
 VOLUME_PATH = Path("/data/state/value.txt")
 DATABASE_PATH = Path("/data/sqlite/db.sqlite")
+OBJECT_PREFIX = "DEVPUSH_OBJECT_OBJECT_E2E"
+OBJECT_KEY = "devpush-e2e/state.txt"
 
 
 class StorageValue(BaseModel):
     value: str
+
+
+def object_client():
+    return boto3.client(
+        "s3",
+        endpoint_url=os.environ[f"{OBJECT_PREFIX}_ENDPOINT_URL"],
+        region_name=os.environ[f"{OBJECT_PREFIX}_REGION"],
+        aws_access_key_id=os.environ[f"{OBJECT_PREFIX}_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ[f"{OBJECT_PREFIX}_SECRET_ACCESS_KEY"],
+        config=Config(
+            signature_version="s3v4",
+            s3={
+                "addressing_style": (
+                    "path"
+                    if os.environ.get(f"{OBJECT_PREFIX}_FORCE_PATH_STYLE") == "true"
+                    else "virtual"
+                )
+            },
+        ),
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -58,3 +83,27 @@ async def read_storage() -> dict[str, str | bool]:
         "database_value": row[0] if row else "",
         "database_rows": str(row[1] if row else 0),
     }
+
+
+@app.post("/object-storage")
+async def write_object(payload: StorageValue) -> dict[str, str]:
+    bucket = os.environ[f"{OBJECT_PREFIX}_BUCKET"]
+    object_client().put_object(
+        Bucket=bucket,
+        Key=OBJECT_KEY,
+        Body=payload.value.encode(),
+        ContentType="text/plain",
+    )
+    return {"bucket": bucket, "key": OBJECT_KEY, "value": payload.value}
+
+
+@app.get("/object-storage")
+async def read_object() -> dict[str, str]:
+    bucket = os.environ[f"{OBJECT_PREFIX}_BUCKET"]
+    response = object_client().get_object(Bucket=bucket, Key=OBJECT_KEY)
+    body = response["Body"]
+    try:
+        value = body.read().decode()
+    finally:
+        body.close()
+    return {"bucket": bucket, "key": OBJECT_KEY, "value": value}
