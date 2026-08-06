@@ -7,7 +7,7 @@
     "start": "next start --hostname 0.0.0.0 --port 8000"
   },
   "dependencies": {
-    "next": "16.2.11",
+    "next": "16.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   }
